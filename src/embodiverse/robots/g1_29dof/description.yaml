@@ -1,0 +1,239 @@
+# Unitree G1, 29-DoF (EDU), draft robot description.
+#
+# Target variant: g1_29dof_rev_1_0, LowState_.mode_machine == 5 (the variant that
+# unitree_rl_lab's G1-29dof deployment requires and that unitree_mujoco reports).
+# Other 29-DoF mode_machine values (6, 11-18) change some effort/velocity limits;
+# see docs/adapters/unitree-g1.md, section 6.
+#
+# Sources (all public, read at the commits below):
+#   - Joint order, motor_index, vendor_name:
+#       unitreerobotics/unitree_sdk2 @ 63096d0ac0c5d2dec9d6e0c22cd5233410ca2f36
+#         include/unitree/dds_wrapper/robots/g1/defines.h,
+#         example/g1/low_level/g1_ankle_swing_example.cpp          (BSD-3-Clause)
+#       unitreerobotics/unitree_rl_lab @ 4960b84732b0c2ec593dccbfe963fda1bcd7b1e3
+#         source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.py (joint_sdk_names)
+#                                                                   (Apache-2.0 repo; file header says BSD-3-Clause)
+#   - Position / velocity / effort limits, IMU and sensor mounts:
+#       unitreerobotics/unitree_ros @ 5994d4faef0a9cadd3287f8de0199a67eeb2a259
+#         robots/g1_description/g1_29dof_rev_1_0.urdf                (BSD-3-Clause)
+#   - default_position, kp, kd (SDK order after applying joint_ids_map):
+#       unitreerobotics/unitree_rl_lab @ 4960b84732b0c2ec593dccbfe963fda1bcd7b1e3
+#         deploy/robots/g1_29dof/config/policy/velocity/v0/params/deploy.yaml
+#         (same values as the FixStand state in deploy/robots/g1_29dof/config/config.yaml,
+#          except FixStand uses shoulder_pitch 0.0)                  (Apache-2.0)
+#   - Rates: 2 ms low-level loop in every vendor low-level example (unitree_sdk2,
+#       unitree_sdk2_python, unitree_ros2) and "high frequencies (500Hz)" for
+#       lowstate in unitree_ros2 example/src/src/g1/lowlevel/g1_low_level_example.cpp
+#       @ 668d1ec5a05d1c38d3306bdca7d59f2ba3581a88                   (BSD-3-Clause)
+#
+# Gains are the reference deployment's motor PD gains in joint space (LowCmd_.mode_pr = 0, PR mode).
+# Ankle and waist roll/pitch are parallel linkages; in PR mode the firmware takes joint-space commands.
+schema_version: 1
+name: g1_29dof
+status: draft
+vendor: {name: Unitree, model: "G1 (29 DoF)"}
+base_link: pelvis
+joints:
+  # ---- left leg ----
+  - name: left_hip_pitch
+    vendor_name: left_hip_pitch_joint
+    motor_index: 0
+    default_position: -0.1
+    limits: {position: [-2.5307, 2.8798], velocity: 32.0, effort: 88.0}  # verify on unit: 88 N·m / 32 rad/s for mode_machine 5 only; 139 / 20 on modes 11,12,15,16,18
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: left_hip_roll
+    vendor_name: left_hip_roll_joint
+    motor_index: 1
+    default_position: 0.0
+    limits: {position: [-0.5236, 2.9671], velocity: 20.0, effort: 139.0}
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: left_hip_yaw
+    vendor_name: left_hip_yaw_joint
+    motor_index: 2
+    default_position: 0.0
+    limits: {position: [-2.7576, 2.7576], velocity: 32.0, effort: 88.0}
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: left_knee
+    vendor_name: left_knee_joint
+    motor_index: 3
+    default_position: 0.3
+    limits: {position: [-0.087267, 2.8798], velocity: 20.0, effort: 139.0}
+    gains: {kp: 150.0, kd: 4.0, side: joint}
+  - name: left_ankle_pitch
+    vendor_name: left_ankle_pitch_joint
+    motor_index: 4
+    default_position: -0.2
+    limits: {position: [-0.87267, 0.5236], velocity: 30.0, effort: 35.0}  # verify on unit: effort 35 (URDF) vs 50 (MJCF) vs 41 (motor_info.md, 5019-16); joint-space limit of a parallel linkage
+    gains: {kp: 40.0, kd: 2.0, side: joint}
+  - name: left_ankle_roll
+    vendor_name: left_ankle_roll_joint
+    motor_index: 5
+    default_position: 0.0
+    limits: {position: [-0.2618, 0.2618], velocity: 30.0, effort: 35.0}  # verify on unit: effort 35 (URDF) vs 50 (MJCF) vs 41 (motor_info.md)
+    gains: {kp: 40.0, kd: 2.0, side: joint}
+  # ---- right leg ----
+  - name: right_hip_pitch
+    vendor_name: right_hip_pitch_joint
+    motor_index: 6
+    default_position: -0.1
+    limits: {position: [-2.5307, 2.8798], velocity: 32.0, effort: 88.0}  # verify on unit: see left_hip_pitch
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: right_hip_roll
+    vendor_name: right_hip_roll_joint
+    motor_index: 7
+    default_position: 0.0
+    limits: {position: [-2.9671, 0.5236], velocity: 20.0, effort: 139.0}
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: right_hip_yaw
+    vendor_name: right_hip_yaw_joint
+    motor_index: 8
+    default_position: 0.0
+    limits: {position: [-2.7576, 2.7576], velocity: 32.0, effort: 88.0}
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: right_knee
+    vendor_name: right_knee_joint
+    motor_index: 9
+    default_position: 0.3
+    limits: {position: [-0.087267, 2.8798], velocity: 20.0, effort: 139.0}
+    gains: {kp: 150.0, kd: 4.0, side: joint}
+  - name: right_ankle_pitch
+    vendor_name: right_ankle_pitch_joint
+    motor_index: 10
+    default_position: -0.2
+    limits: {position: [-0.87267, 0.5236], velocity: 30.0, effort: 35.0}  # verify on unit: see left_ankle_pitch
+    gains: {kp: 40.0, kd: 2.0, side: joint}
+  - name: right_ankle_roll
+    vendor_name: right_ankle_roll_joint
+    motor_index: 11
+    default_position: 0.0
+    limits: {position: [-0.2618, 0.2618], velocity: 30.0, effort: 35.0}  # verify on unit: see left_ankle_roll
+    gains: {kp: 40.0, kd: 2.0, side: joint}
+  # ---- waist (indices 13, 14 are invalid on waist-locked units, mode_machine 6/12/14/16) ----
+  - name: waist_yaw
+    vendor_name: waist_yaw_joint
+    motor_index: 12
+    default_position: 0.0
+    limits: {position: [-2.618, 2.618], velocity: 32.0, effort: 88.0}
+    gains: {kp: 200.0, kd: 5.0, side: joint}
+  - name: waist_roll
+    vendor_name: waist_roll_joint
+    motor_index: 13
+    default_position: 0.0
+    limits: {position: [-0.52, 0.52], velocity: 30.0, effort: 35.0}  # verify on unit: effort 35 (URDF) vs 50 (MJCF) vs 60 (motor_info.md, 6010-32); 100 / 26.9 rad/s on mode_machine 18
+    gains: {kp: 200.0, kd: 5.0, side: joint}  # verify on unit: deploy.yaml kp 200; unitree.py (current training config) kp 40
+  - name: waist_pitch
+    vendor_name: waist_pitch_joint
+    motor_index: 14
+    default_position: 0.0
+    limits: {position: [-0.52, 0.52], velocity: 30.0, effort: 35.0}  # verify on unit: see waist_roll
+    gains: {kp: 200.0, kd: 5.0, side: joint}  # verify on unit: see waist_roll
+  # ---- left arm (arm kd 10 is from deploy.yaml; unitree.py uses kd 1) ----
+  - name: left_shoulder_pitch
+    vendor_name: left_shoulder_pitch_joint
+    motor_index: 15
+    default_position: 0.3
+    limits: {position: [-3.0892, 2.6704], velocity: 37.0, effort: 25.0}  # verify on unit: motor_info.md lists 60 N·m (6010-32) for newer units
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: left_shoulder_roll
+    vendor_name: left_shoulder_roll_joint
+    motor_index: 16
+    default_position: 0.25
+    limits: {position: [-1.5882, 2.2515], velocity: 37.0, effort: 25.0}
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: left_shoulder_yaw
+    vendor_name: left_shoulder_yaw_joint
+    motor_index: 17
+    default_position: 0.0
+    limits: {position: [-2.618, 2.618], velocity: 37.0, effort: 25.0}
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: left_elbow
+    vendor_name: left_elbow_joint
+    motor_index: 18
+    default_position: 0.97
+    limits: {position: [-1.0472, 2.0944], velocity: 37.0, effort: 25.0}
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: left_wrist_roll
+    vendor_name: left_wrist_roll_joint
+    motor_index: 19
+    default_position: 0.15
+    limits: {position: [-1.972222054, 1.972222054], velocity: 37.0, effort: 25.0}
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: left_wrist_pitch
+    vendor_name: left_wrist_pitch_joint
+    motor_index: 20
+    default_position: 0.0
+    limits: {position: [-1.614429558, 1.614429558], velocity: 22.0, effort: 5.0}  # verify on unit: 4010 wrist motor; 13.4 N·m / 27 rad/s with 5010 wrist (modes 13-18)
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: left_wrist_yaw
+    vendor_name: left_wrist_yaw_joint
+    motor_index: 21
+    default_position: 0.0
+    limits: {position: [-1.614429558, 1.614429558], velocity: 22.0, effort: 5.0}  # verify on unit: see left_wrist_pitch
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  # ---- right arm ----
+  - name: right_shoulder_pitch
+    vendor_name: right_shoulder_pitch_joint
+    motor_index: 22
+    default_position: 0.3
+    limits: {position: [-3.0892, 2.6704], velocity: 37.0, effort: 25.0}  # verify on unit: see left_shoulder_pitch
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: right_shoulder_roll
+    vendor_name: right_shoulder_roll_joint
+    motor_index: 23
+    default_position: -0.25
+    limits: {position: [-2.2515, 1.5882], velocity: 37.0, effort: 25.0}
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: right_shoulder_yaw
+    vendor_name: right_shoulder_yaw_joint
+    motor_index: 24
+    default_position: 0.0
+    limits: {position: [-2.618, 2.618], velocity: 37.0, effort: 25.0}
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: right_elbow
+    vendor_name: right_elbow_joint
+    motor_index: 25
+    default_position: 0.97
+    limits: {position: [-1.0472, 2.0944], velocity: 37.0, effort: 25.0}
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: right_wrist_roll
+    vendor_name: right_wrist_roll_joint
+    motor_index: 26
+    default_position: -0.15
+    limits: {position: [-1.972222054, 1.972222054], velocity: 37.0, effort: 25.0}
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: right_wrist_pitch
+    vendor_name: right_wrist_pitch_joint
+    motor_index: 27
+    default_position: 0.0
+    limits: {position: [-1.614429558, 1.614429558], velocity: 22.0, effort: 5.0}  # verify on unit: see left_wrist_pitch
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+  - name: right_wrist_yaw
+    vendor_name: right_wrist_yaw_joint
+    motor_index: 28
+    default_position: 0.0
+    limits: {position: [-1.614429558, 1.614429558], velocity: 22.0, effort: 5.0}  # verify on unit: see left_wrist_pitch
+    gains: {kp: 40.0, kd: 10.0, side: joint}
+joint_groups:
+  legs: [left_hip_pitch, left_hip_roll, left_hip_yaw, left_knee, left_ankle_pitch, left_ankle_roll,
+         right_hip_pitch, right_hip_roll, right_hip_yaw, right_knee, right_ankle_pitch, right_ankle_roll]
+  waist: [waist_yaw, waist_roll, waist_pitch]
+  arms: [left_shoulder_pitch, left_shoulder_roll, left_shoulder_yaw, left_elbow, left_wrist_roll, left_wrist_pitch, left_wrist_yaw,
+         right_shoulder_pitch, right_shoulder_roll, right_shoulder_yaw, right_elbow, right_wrist_roll, right_wrist_pitch, right_wrist_yaw]
+  # per-side arm groups: rt/arm_sdk teleoperation and dual-arm examples address each arm
+  left_arm: [left_shoulder_pitch, left_shoulder_roll, left_shoulder_yaw, left_elbow, left_wrist_roll, left_wrist_pitch, left_wrist_yaw]
+  right_arm: [right_shoulder_pitch, right_shoulder_roll, right_shoulder_yaw, right_elbow, right_wrist_roll, right_wrist_pitch, right_wrist_yaw]
+# LowState_.imu_state is the pelvis IMU (unitree_rl_gym deploy_real/configs/g1.yaml imu_type: "pelvis";
+# g1_ankle_swing_example.cpp labels it IMU.pelvis). Mount from the URDF fixed joint imu_in_pelvis_joint.
+imu: {frame: imu_in_pelvis, parent: pelvis, mount_xyz: [0.04525, 0.0, -0.08339], mount_rpy: [0.0, 0.0, 0.0]}  # verify on unit: axes aligned with pelvis; unitree_mujoco MJCF places its IMU site at the pelvis origin instead
+sensors:
+  # Torso IMU, published separately on rt/secondary_imu (IMUState_).
+  torso_imu: {type: imu, frame: imu_in_torso, parent: torso_link, mount_xyz: [-0.03959, -0.00224, 0.14792], mount_rpy: [0.0, 0.0, 0.0]}  # verify on unit: mount from rev_1_0 URDF; deprecated g1_29dof.urdf has z 0.13792
+  # 3D lidar; model inferred from the URDF link name (Livox MID-360). Mounted upside down
+  # (roll pi), per unitree_ros commit 7c40519 "fix g1 mid360_joint transform" (2026-06-16).
+  head_lidar: {type: lidar, frame: mid360_link, parent: torso_link, mount_xyz: [0.0002835, 0.00003, 0.428434], mount_rpy: [3.141592653589793, 0.05112069379091391, 0.0]}  # verify on unit: model, mount, data path (not in SDK DDS topics)
+  # Head depth camera: Intel RealSense D435i (xr_teleoperate Device.md), pitched down ~47.6 deg.
+  head_camera: {type: depth_camera, frame: d435_link, parent: torso_link, mount_xyz: [0.0576235, 0.01753, 0.42987], mount_rpy: [0.0, 0.8307767239493009, 0.0]}  # verify on unit: d435_link is a body frame (x forward), not the optical frame; USB on PC2
+rates:
+  physics_hz: 500       # verify on unit: rt/lowstate rate (500 Hz per unitree_ros2 example); motor-side PD rate not public
+  control_hz_max: 500   # verify on unit: vendor examples write rt/lowcmd every 2 ms; unitree_rl_lab's FSM writes at 1 kHz
+models: {mjcf: null, urdf: null}

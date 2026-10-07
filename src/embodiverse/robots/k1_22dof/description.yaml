@@ -1,0 +1,204 @@
+# Booster Robotics K1, 22-DoF layout: draft robot description.
+#
+# Sources (all public; commit pinned):
+#   - BoosterRobotics/booster_assets @ 12a97516f57469078707afb587a5f84c1cb110d1, BSD-3-Clause
+#       robots/K1/K1_22dof.urdf          joint names, axes, position/velocity/effort limits, camera frames
+#       robots/K1/K1_22dof.xml           same limits (MJCF), IMU site at trunk origin
+#       robots/K1/K1_22dof_parallel.xml  closed-loop ankle linkage (two crank motors per ankle)
+#   - BoosterRobotics/booster_robotics_sdk @ 87a9a26d06a94ddd50968e7576f1170f6fa5a80f, Apache-2.0
+#       include/booster/robot/b1/b1_api_const.hpp   JointIndexK1 (motor order), kJointCntK1 = 22
+#       include/booster/idl/b1/LowCmd.h             CmdType {PARALLEL, SERIAL}
+#   - BoosterRobotics/booster_deploy @ 7bb1462e2ac742eba5c01659b815e2e99fbe617f, Apache-2.0
+#       tasks/locomotion/robots/k1/__init__.py      K1WalkControllerCfg: default pose, kp, kd (k1_walk.pt policy)
+#       booster_deploy/controllers/booster_robot_controller.py  LowCmd.CMD_TYPE_SERIAL, motor_state_serial
+#   - BoosterRobotics/booster_train @ 8bb5b53824e0fbcfe69a5cb78a81f4bddb3e2a6e, Apache-2.0
+#       source/booster_train/booster_train/assets/robots/actuator.py, booster_k1.py   actuator models
+#   - docs.booster.tech (doc centre release 0.0.20, SDK v1.6.3), no stated licence (cited, not copied)
+#       K1 specifications page: joint IDs 0-21 and names ("Left Shoulder Yaw Joint" = ID 4, "Left Elbow Joint" = ID 5)
+#
+# Joint order is the SDK motor order (JointIndexK1, 0..21). Values are in joint space (SDK SERIAL mode).
+# vendor_name is the joint name in the official URDF/MJCF (also used by booster_deploy and booster_train).
+schema_version: 1
+name: k1_22dof
+status: draft
+vendor: {name: Booster Robotics, model: "K1 (22 DoF)"}
+base_link: trunk
+joints:
+  # ---- head (HT4438 actuators per booster_train actuator.py) ----
+  - name: head_yaw
+    vendor_name: aahead_yaw_joint            # SDK JointIndexK1::kHeadYaw
+    motor_index: 0
+    default_position: 0.0
+    limits: {position: [-1.012, 1.012], velocity: 7.85, effort: 6.0}
+    gains: {kp: 4.0, kd: 1.0, side: joint}
+  - name: head_pitch
+    vendor_name: aahead_pitch_joint          # kHeadPitch
+    motor_index: 1
+    default_position: 0.0
+    limits: {position: [-0.314, 0.794], velocity: 7.85, effort: 6.0}   # verify on unit: spec page lists -19..49 deg (-0.332..0.855 rad)
+    gains: {kp: 4.0, kd: 1.0, side: joint}
+  # ---- left arm (R14 actuators) ----
+  - name: left_shoulder_pitch
+    vendor_name: aaleft_shoulder_pitch_joint # kLeftShoulderPitch
+    motor_index: 2
+    default_position: 0.2
+    limits: {position: [-2.932, 1.196], velocity: 33.51, effort: 14.0}
+    gains: {kp: 20.0, kd: 2.0, side: joint}
+  - name: left_shoulder_roll
+    vendor_name: left_shoulder_roll_joint    # kLeftShoulderRoll
+    motor_index: 3
+    default_position: -1.25
+    limits: {position: [-1.642, 1.629], velocity: 33.51, effort: 14.0}
+    gains: {kp: 20.0, kd: 2.0, side: joint}
+  # Vendor names this joint "elbow pitch" (SDK kLeftElbowPitch), but its axis runs along the upper arm:
+  # it is a humeral rotation, and the K1 spec page and SDK ArmController call it shoulder yaw.
+  - name: left_shoulder_yaw
+    vendor_name: left_elbow_pitch_joint      # kLeftElbowPitch
+    motor_index: 4
+    default_position: 0.0
+    limits: {position: [-1.885, 1.885], velocity: 33.51, effort: 14.0}
+    gains: {kp: 20.0, kd: 2.0, side: joint}
+  # Vendor "elbow yaw" (kLeftElbowYaw) is the elbow flexion joint (spec page: "Left Elbow Joint").
+  - name: left_elbow
+    vendor_name: left_elbow_yaw_joint        # kLeftElbowYaw
+    motor_index: 5
+    default_position: -0.5
+    limits: {position: [-2.242, 0.816], velocity: 33.51, effort: 14.0}   # verify on unit: spec page upper limit is 39 deg (0.681 rad)
+    gains: {kp: 20.0, kd: 2.0, side: joint}
+  # ---- right arm (R14) ----
+  - name: right_shoulder_pitch
+    vendor_name: aaright_shoulder_pitch_joint  # kRightShoulderPitch
+    motor_index: 6
+    default_position: 0.2
+    limits: {position: [-2.932, 1.196], velocity: 33.51, effort: 14.0}
+    gains: {kp: 20.0, kd: 2.0, side: joint}
+  - name: right_shoulder_roll
+    vendor_name: right_shoulder_roll_joint   # kRightShoulderRoll
+    motor_index: 7
+    default_position: 1.25
+    limits: {position: [-1.642, 1.629], velocity: 33.51, effort: 14.0}
+    gains: {kp: 20.0, kd: 2.0, side: joint}
+  - name: right_shoulder_yaw
+    vendor_name: right_elbow_pitch_joint     # kRightElbowPitch (humeral rotation, see left side)
+    motor_index: 8
+    default_position: 0.0
+    limits: {position: [-1.885, 1.885], velocity: 33.51, effort: 14.0}
+    gains: {kp: 20.0, kd: 2.0, side: joint}
+  - name: right_elbow
+    vendor_name: right_elbow_yaw_joint       # kRightElbowYaw (elbow flexion)
+    motor_index: 9
+    default_position: 0.5
+    limits: {position: [-0.816, 2.242], velocity: 33.51, effort: 14.0}   # verify on unit: spec page lower limit is -39 deg (-0.681 rad)
+    gains: {kp: 20.0, kd: 2.0, side: joint}
+  # ---- left leg ----
+  # effort = URDF/MJCF actuator peak (E6408 68, E4315 43, E4310 38.3, E6416 112 N*m).
+  # booster_deploy clips lower in its configs (k1 walk: 30/20/15/35/24/15 N*m); verify on unit which limit the firmware enforces.
+  - name: left_hip_pitch
+    vendor_name: left_hip_pitch_joint        # kLeftHipPitch
+    motor_index: 10
+    default_position: -0.15
+    limits: {position: [-2.958, 2.226], velocity: 14.66, effort: 68.0}
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: left_hip_roll
+    vendor_name: left_hip_roll_joint         # kLeftHipRoll
+    motor_index: 11
+    default_position: 0.0
+    limits: {position: [-0.375, 1.536], velocity: 12.57, effort: 43.0}  # verify on unit: booster_train E4315 model uses 12.15 rad/s
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: left_hip_yaw
+    vendor_name: left_hip_yaw_joint          # kLeftHipYaw
+    motor_index: 12
+    default_position: 0.0
+    limits: {position: [-1.012, 1.012], velocity: 17.59, effort: 38.3}
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: left_knee
+    vendor_name: left_knee_pitch_joint       # kLeftKneePitch
+    motor_index: 13
+    default_position: 0.3
+    limits: {position: [0.0, 2.321], velocity: 12.57, effort: 112.0}
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  # Ankles are a parallel linkage: two E4310 crank motors per foot (SDK kCrankUpLeft / kCrankDownLeft,
+  # spec page "Ankle Up / Ankle Down"; closed loop modelled in K1_22dof_parallel.xml).
+  # The SDK offers both representations: LowCmd.cmd_type = SERIAL takes ankle pitch/roll targets in joint
+  # space and the firmware maps them to the two motors; LowState.motor_state_serial reports pitch/roll.
+  # Every public K1 deployment (booster_deploy) commands in SERIAL mode with these joint-space slots, so
+  # side: joint. Slots 14/15 hold ankle pitch/roll in SERIAL mode and crank up/down in PARALLEL mode.
+  # verify on unit: booster_deploy README states that for parallel-actuated joints the kd sent is applied
+  # directly at the motors (not mapped through the linkage). If kp/kd act motor-side in SERIAL mode,
+  # change these two entries per leg to side: motor and re-derive the gains.
+  - name: left_ankle_pitch
+    vendor_name: left_ankle_pitch_joint      # SERIAL slot 14 (PARALLEL: kCrankUpLeft)
+    motor_index: 14
+    default_position: -0.15
+    limits: {position: [-0.87, 0.345], velocity: 17.59, effort: 38.3}   # verify on unit: spec page gives motor-space ankle limits only
+    gains: {kp: 65.0, kd: 1.0, side: joint}
+  - name: left_ankle_roll
+    vendor_name: left_ankle_roll_joint       # SERIAL slot 15 (PARALLEL: kCrankDownLeft)
+    motor_index: 15
+    default_position: 0.0
+    limits: {position: [-0.345, 0.345], velocity: 17.59, effort: 38.3}  # verify on unit: joint-space torque/velocity of the linkage
+    gains: {kp: 65.0, kd: 1.0, side: joint}
+  # ---- right leg ----
+  - name: right_hip_pitch
+    vendor_name: right_hip_pitch_joint       # kRightHipPitch
+    motor_index: 16
+    default_position: -0.15
+    limits: {position: [-2.958, 2.226], velocity: 14.66, effort: 68.0}
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: right_hip_roll
+    vendor_name: right_hip_roll_joint        # kRightHipRoll
+    motor_index: 17
+    default_position: 0.0
+    limits: {position: [-1.536, 0.375], velocity: 12.57, effort: 43.0}  # verify on unit: see left_hip_roll velocity
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: right_hip_yaw
+    vendor_name: right_hip_yaw_joint         # kRightHipYaw
+    motor_index: 18
+    default_position: 0.0
+    limits: {position: [-1.012, 1.012], velocity: 17.59, effort: 38.3}
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: right_knee
+    vendor_name: right_knee_pitch_joint      # kRightKneePitch
+    motor_index: 19
+    default_position: 0.3
+    limits: {position: [0.0, 2.321], velocity: 12.57, effort: 112.0}
+    gains: {kp: 100.0, kd: 2.0, side: joint}
+  - name: right_ankle_pitch
+    vendor_name: right_ankle_pitch_joint     # SERIAL slot 20 (PARALLEL: kCrankUpRight); see left ankle note
+    motor_index: 20
+    default_position: -0.15
+    limits: {position: [-0.87, 0.345], velocity: 17.59, effort: 38.3}
+    gains: {kp: 65.0, kd: 1.0, side: joint}
+  - name: right_ankle_roll
+    vendor_name: right_ankle_roll_joint      # SERIAL slot 21 (PARALLEL: kCrankDownRight); see left ankle note
+    motor_index: 21
+    default_position: 0.0
+    limits: {position: [-0.345, 0.345], velocity: 17.59, effort: 38.3}
+    gains: {kp: 65.0, kd: 1.0, side: joint}
+joint_groups:
+  legs: [left_hip_pitch, left_hip_roll, left_hip_yaw, left_knee, left_ankle_pitch, left_ankle_roll,
+         right_hip_pitch, right_hip_roll, right_hip_yaw, right_knee, right_ankle_pitch, right_ankle_roll]
+  arms: [left_shoulder_pitch, left_shoulder_roll, left_shoulder_yaw, left_elbow,
+         right_shoulder_pitch, right_shoulder_roll, right_shoulder_yaw, right_elbow]
+  head: [head_yaw, head_pitch]
+# IMU: LowState.imu_state gives rpy (rad), gyro, acc; the SDK IDL lists IMU model HI13R4N.
+# Mount from the MJCF site "imu" (trunk origin, identity rotation); the URDF has no IMU link.
+# verify on unit: physical IMU position and orientation in trunk; reference deployments use imu rpy/gyro as trunk state directly.
+imu: {frame: imu_link, parent: trunk, mount_xyz: [0.0, 0.0, 0.0], mount_rpy: [0.0, 0.0, 0.0]}
+sensors:
+  # Head stereo depth camera, frame from K1_22dof.urdf (optical convention: z forward, x right, y down).
+  # verify on unit: which camera this edition carries. Public sources list three: Booster stereo
+  # (D-Robotics StereoNet topics in robocup_demo), RealSense (URDF frame head_realsense_rgb_link:
+  # parent aahead_pitch_link, xyz [0.053617, -0.0115, 0.10231], rpy [-1.835388, 0, -1.570796]) and
+  # ZED (K1 manual V1.0; K1_22dof-ZED.urdf named in the docs but absent from booster_assets).
+  head_camera:
+    type: depth_camera
+    frame: head_booster_stereo_rgb_link
+    parent: aahead_pitch_link
+    mount_xyz: [0.060138, 0.0351, 0.092774]
+    mount_rpy: [-1.570796, 0.0, -1.570796]
+# verify on unit: no public source states the firmware joint-loop or low_state rate. 500 Hz is the highest
+# rate any vendor example publishes rt/joint_ctrl (booster_deploy 2 ms prepare interpolation; booster_gym
+# dt 0.002 on T1); the shipped K1 policies publish at 50 Hz. Measure low_state rate and accepted command rate.
+rates: {physics_hz: 500, control_hz_max: 500}
+models: {mjcf: null, urdf: null}

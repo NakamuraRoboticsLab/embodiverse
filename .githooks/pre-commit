@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Fast checks before every commit: formatting and lint.
+set -euo pipefail
+
+if ! uv run ruff format --check; then
+    echo "pre-commit: formatting check failed. Fix with: uv run ruff format" >&2
+    exit 1
+fi
+
+if ! uv run ruff check; then
+    echo "pre-commit: lint check failed. Fix with: uv run ruff check --fix" >&2
+    exit 1
+fi
+
+exit 0

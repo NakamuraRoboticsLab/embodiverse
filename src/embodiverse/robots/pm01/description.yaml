@@ -1,0 +1,223 @@
+# EngineAI PM01 (2026 Education Edition, vendor model id "pm01_edu" / "pm_v2"): draft robot description.
+#
+# Sources (all public, read at the commits below):
+#   [A] engineai-robotics/engineai_robotics_native_sdk @ 335c60e88772c26c7852d0abd6b3c7439037dd8f   BSD-3-Clause
+#       assets/resource/robot/pm01_edu/urdf/serial_pm01_edu.urdf      joint names, order, limits (position, velocity, effort)
+#       assets/resource/robot/pm01_edu/xml/serial_pm01_edu.xml        IMU site "imu" mount (MJCF), base link
+#       assets/config/pm01_edu/model/default.yaml                     limb order = SDK joint/motor order, parallel ankle groups
+#       assets/config/pm01_edu/rl_lab/default.yaml                    default_position, kp, kd (AMP walking deployment config)
+#       assets/config/pm01_edu/task_resident/robot.yaml               500 Hz motor task (period 0.002 s)
+#   [B] engineai-robotics/engineai_rl_lab @ c53f7ec614e34f1ea514cefb935894082f3d4c2a                BSD-3-Clause
+#       source/engineai_rl_lab/engineai_rl_lab/tasks/locomotion/amp/robots/pm01.py   training-side copy of the same pose and gains
+#   [C] engineai-robotics/engineai_ros2_workspace @ c41043f64ca1d308be187ebdcc2eaae40884f59c (branch community)   BSD-3-Clause
+#       src/interface_protocol/msg/*.msg, src/interface_example/scripts/joint_bridge_example.py (500 Hz joint commands)
+#       src/simulation/mujoco/assets/resource/robot/pm_v2/{urdf,xml}  identical joint data to [A]
+#   [D] engineai-robotics/engineai_robotics_description @ 1d2d7601f520f716863c32a83abe9c77b26ee06c  NO LICENCE FILE
+#       pm01_edu/urdf/serial_pm01_edu.urdf                            camera_link_head / camera_link_torso mounts (facts only; files not redistributable)
+#       pm01_lidar/urdf/serial_pm01_edu.urdf                          LIVOX_FRAME mount (Navigation Edition)
+#   [E] https://en.engineai.com.cn/product-pm01.html (accessed 2026-10-04)  24 joint motors, 2 cameras (head, waist), LiDAR on Navigation Edition only
+#
+# Joint order is the SDK order (J00..J23): /hardware/joint_state and /hardware/joint_command arrays use it,
+# so motor_index == array index. All gains are joint-side: the SDK converts the parallel-linkage ankle
+# joints (J04/J05, J10/J11) to motor commands itself (joint_motor_transform_runner, parallel_ankle).
+# Effort limits are the URDF/MJCF values; vendor RL configs use lower values in places (see docs/adapters/engineai-pm01.md, section 6).
+
+schema_version: 1
+name: pm01
+status: draft
+vendor: {name: EngineAI, model: PM01}
+base_link: LINK_BASE
+
+joints:
+  # ---- left leg ----
+  - name: left_hip_pitch
+    vendor_name: J00_HIP_PITCH_L   # axis tilted 15 deg about x in URDF: (0, 0.966, -0.259)
+    motor_index: 0
+    default_position: -0.06
+    limits: {position: [-3.141, 2.443], velocity: 26.3, effort: 164.0}
+    gains: {kp: 110.0, kd: 5.0, side: joint}
+  - name: left_hip_roll
+    vendor_name: J01_HIP_ROLL_L
+    motor_index: 1
+    default_position: 0.0
+    limits: {position: [-0.436, 2.094], velocity: 26.3, effort: 164.0}
+    gains: {kp: 70.0, kd: 3.0, side: joint}
+  - name: left_hip_yaw
+    vendor_name: J02_HIP_YAW_L
+    motor_index: 2
+    default_position: 0.0
+    limits: {position: [-1.57, 4.014], velocity: 35.2, effort: 61.0}   # verify on unit: tracking config [B] uses 52 N·m for this motor class
+    gains: {kp: 70.0, kd: 3.0, side: joint}
+  - name: left_knee
+    vendor_name: J03_KNEE_PITCH_L
+    motor_index: 3
+    default_position: 0.12
+    limits: {position: [-0.3491, 2.3911], velocity: 26.3, effort: 164.0}
+    gains: {kp: 110.0, kd: 5.0, side: joint}
+  - name: left_ankle_pitch
+    vendor_name: J04_ANKLE_PITCH_L   # parallel linkage with J05; SDK maps joint <-> motor
+    motor_index: 4                   # verify on unit: index 4 is the joint slot; /hardware/motor_state slot 4 is a linkage motor, not pitch
+    default_position: -0.06
+    limits: {position: [-0.6807, 0.7243], velocity: 35.2, effort: 61.0}   # verify on unit: AMP config [B] uses 54.9 N·m for ankles
+    gains: {kp: 30.0, kd: 0.3, side: joint}   # verify on unit: joint-space gains go through the vendor parallel parser (RL_PARSER vs CLASSIC_PARSER)
+  - name: left_ankle_roll
+    vendor_name: J05_ANKLE_ROLL_L    # parallel linkage with J04
+    motor_index: 5
+    default_position: 0.0
+    limits: {position: [-0.2618, 0.2618], velocity: 35.2, effort: 61.0}   # verify on unit: AMP config [B] uses 54.9 N·m for ankles
+    gains: {kp: 30.0, kd: 0.3, side: joint}
+  # ---- right leg ----
+  - name: right_hip_pitch
+    vendor_name: J06_HIP_PITCH_R   # axis (0, 0.966, 0.259)
+    motor_index: 6
+    default_position: -0.06
+    limits: {position: [-3.141, 2.443], velocity: 26.3, effort: 164.0}
+    gains: {kp: 110.0, kd: 5.0, side: joint}
+  - name: right_hip_roll
+    vendor_name: J07_HIP_ROLL_R
+    motor_index: 7
+    default_position: 0.0
+    limits: {position: [-2.094, 0.436], velocity: 26.3, effort: 164.0}
+    gains: {kp: 70.0, kd: 3.0, side: joint}
+  - name: right_hip_yaw
+    vendor_name: J08_HIP_YAW_R
+    motor_index: 8
+    default_position: 0.0
+    limits: {position: [-4.014, 1.57], velocity: 35.2, effort: 61.0}   # verify on unit: 52 N·m in [B] tracking config
+    gains: {kp: 70.0, kd: 3.0, side: joint}
+  - name: right_knee
+    vendor_name: J09_KNEE_PITCH_R
+    motor_index: 9
+    default_position: 0.12
+    limits: {position: [-0.3491, 2.3911], velocity: 26.3, effort: 164.0}
+    gains: {kp: 110.0, kd: 5.0, side: joint}
+  - name: right_ankle_pitch
+    vendor_name: J10_ANKLE_PITCH_R   # parallel linkage with J11
+    motor_index: 10
+    default_position: -0.06
+    limits: {position: [-0.6807, 0.7243], velocity: 35.2, effort: 61.0}   # verify on unit: 54.9 N·m in [B]
+    gains: {kp: 30.0, kd: 0.3, side: joint}
+  - name: right_ankle_roll
+    vendor_name: J11_ANKLE_ROLL_R    # parallel linkage with J10
+    motor_index: 11
+    default_position: 0.0
+    limits: {position: [-0.2618, 0.2618], velocity: 35.2, effort: 61.0}   # verify on unit: 54.9 N·m in [B]
+    gains: {kp: 30.0, kd: 0.3, side: joint}
+  # ---- waist ----
+  - name: waist_yaw
+    vendor_name: J12_WAIST_YAW       # serial joint, asymmetric range (-230 deg .. +90 deg)
+    motor_index: 12
+    default_position: 0.0
+    limits: {position: [-4.014, 1.57], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 3.0, side: joint}
+  # ---- left arm ----
+  - name: left_shoulder_pitch
+    vendor_name: J13_SHOULDER_PITCH_L
+    motor_index: 13
+    default_position: 0.0
+    limits: {position: [-2.9671, 2.7925], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 0.3, side: joint}
+  - name: left_shoulder_roll
+    vendor_name: J14_SHOULDER_ROLL_L
+    motor_index: 14
+    default_position: 0.15
+    limits: {position: [-0.6108, 2.3562], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 0.3, side: joint}
+  - name: left_shoulder_yaw
+    vendor_name: J15_SHOULDER_YAW_L
+    motor_index: 15
+    default_position: 0.0
+    limits: {position: [-2.618, 2.618], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 0.3, side: joint}
+  - name: left_elbow_pitch
+    vendor_name: J16_ELBOW_PITCH_L
+    motor_index: 16
+    default_position: -0.25
+    limits: {position: [-2.1948, 0.7374], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 0.3, side: joint}
+  - name: left_elbow_yaw
+    vendor_name: J17_ELBOW_YAW_L     # forearm roll about an axis close to the forearm (-0.215, -0.062, 0.975); no wrist joints on PM01
+    motor_index: 17
+    default_position: 0.0
+    limits: {position: [-2.618, 2.618], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 0.3, side: joint}
+  # ---- right arm ----
+  - name: right_shoulder_pitch
+    vendor_name: J18_SHOULDER_PITCH_R
+    motor_index: 18
+    default_position: 0.0
+    limits: {position: [-2.9671, 2.7925], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 0.3, side: joint}
+  - name: right_shoulder_roll
+    vendor_name: J19_SHOULDER_ROLL_R
+    motor_index: 19
+    default_position: -0.15
+    limits: {position: [-2.3562, 0.6108], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 0.3, side: joint}
+  - name: right_shoulder_yaw
+    vendor_name: J20_SHOULDER_YAW_R
+    motor_index: 20
+    default_position: 0.0
+    limits: {position: [-2.618, 2.618], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 0.3, side: joint}
+  - name: right_elbow_pitch
+    vendor_name: J21_ELBOW_PITCH_R
+    motor_index: 21
+    default_position: -0.25
+    limits: {position: [-2.1948, 0.7374], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 0.3, side: joint}
+  - name: right_elbow_yaw
+    vendor_name: J22_ELBOW_YAW_R
+    motor_index: 22
+    default_position: 0.0
+    limits: {position: [-2.618, 2.618], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 0.3, side: joint}
+  # ---- head ----
+  - name: head_yaw
+    vendor_name: J23_HEAD_YAW        # not an active joint of the AMP policy; held at default with these gains by [A] rl_lab
+    motor_index: 23
+    default_position: 0.0
+    limits: {position: [-0.6109, 0.6109], velocity: 35.2, effort: 61.0}
+    gains: {kp: 50.0, kd: 0.3, side: joint}
+
+joint_groups:
+  legs: [left_hip_pitch, left_hip_roll, left_hip_yaw, left_knee, left_ankle_pitch, left_ankle_roll,
+         right_hip_pitch, right_hip_roll, right_hip_yaw, right_knee, right_ankle_pitch, right_ankle_roll]
+  waist: [waist_yaw]
+  arms: [left_shoulder_pitch, left_shoulder_roll, left_shoulder_yaw, left_elbow_pitch, left_elbow_yaw,
+         right_shoulder_pitch, right_shoulder_roll, right_shoulder_yaw, right_elbow_pitch, right_elbow_yaw]
+  head: [head_yaw]
+
+# IMU: no IMU link in the vendor URDF. Mount from MJCF site "imu" in LINK_BASE [A]; frame name is ours.
+imu:
+  frame: imu_link              # verify on unit: vendor driver frame name and whether it already rotates readings into LINK_BASE axes
+  parent: LINK_BASE
+  mount_xyz: [0.02311, 0.0, -0.09631]   # verify on unit: from simulation model only
+  mount_rpy: [0.0, 0.0, 0.0]            # verify on unit: vendor ROS 2 RL example applies a 0.015 rad pitch install bias
+
+sensors:
+  head_camera:
+    type: depth_camera         # verify on unit: vendor spec says "ultra-wide FOV binocular camera"; model and depth output not public
+    frame: camera_link_head    # body-convention frame (x forward), not an optical frame
+    parent: LINK_HEAD_YAW
+    mount_xyz: [0.07426239, 0.0175, 0.09676911]   # from [D] (unlicensed repo); verify on unit
+    mount_rpy: [0.0, 0.26420093362, 0.0]          # pitched down about 15.1 deg; verify on unit
+  torso_camera:                # vendor spec calls it the waist camera
+    type: depth_camera         # verify on unit: same as head_camera
+    frame: camera_link_torso
+    parent: LINK_TORSO_YAW
+    mount_xyz: [0.07112178, 0.0175, 0.01109251]   # from [D]; verify on unit
+    mount_rpy: [0.0, 0.86946334308, 0.0]          # pitched down about 49.8 deg; verify on unit
+  # Navigation Edition only (Livox Mid-360, per engineai_navigation README); mount from [D] pm01_lidar:
+  # lidar:
+  #   type: lidar
+  #   frame: LIVOX_FRAME
+  #   parent: LINK_TORSO_YAW
+  #   mount_xyz: [0.12438064, 0.0, 0.21289480]
+  #   mount_rpy: [0.872664626, 0.0, 1.570796327]
+
+rates:
+  physics_hz: 500       # vendor motor task period 0.002 s [A task_resident/robot.yaml]; verify on unit: closed-source motor driver may run its own faster loop
+  control_hz_max: 500   # vendor joint command example publishes at 500 Hz [C]; faster commands cannot be consumed by a 500 Hz motor task
+
+models: {mjcf: null, urdf: null}

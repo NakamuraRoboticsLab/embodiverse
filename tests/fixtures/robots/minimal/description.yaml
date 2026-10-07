@@ -1,0 +1,56 @@
+# A two-joint robot for the tests. Its model file is not included.
+schema_version: 1
+name: minimal
+status: draft
+vendor:
+  name: Example Robotics
+  model: EX-2
+base_link: pelvis
+
+# Canonical joint order: arrays of joint values follow this list.
+joints:
+  - name: left_knee
+    vendor_name: KNEE_L
+    motor_index: 0
+    default_position: 0.3
+    limits:
+      position: [-0.087, 2.88]
+      velocity: 20.0
+      effort: 139.0
+    gains:
+      kp: 150.0
+      kd: 4.0
+  - name: right_knee
+    vendor_name: KNEE_R
+    motor_index: 1
+    default_position: 0.3
+    limits:
+      position: [-0.087, 2.88]
+      velocity: 20.0
+      effort: 139.0
+    gains:
+      kp: 150.0
+      kd: 4.0
+
+joint_groups:
+  legs: [left_knee, right_knee]
+
+imu:
+  frame: imu_link
+  parent: pelvis
+  mount_xyz: [-0.04, 0.0, -0.08]
+
+sensors:
+  front_lidar:
+    type: lidar
+    frame: lidar_link
+    parent: pelvis
+    mount_xyz: [0.1, 0.0, 0.15]
+    mount_rpy: [0.0, 0.2, 0.0]  # pitched 0.2 rad down
+
+rates:
+  physics_hz: 1000.0
+  control_hz_max: 500.0
+
+models:
+  mjcf: model.xml  # relative to this file

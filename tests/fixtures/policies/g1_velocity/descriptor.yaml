@@ -1,0 +1,82 @@
+# The Unitree G1 12-DoF reference walking policy (unitree_rl_gym, G1 task),
+# run on the 29-joint G1: it drives the 12 leg joints at 50 Hz and the
+# waist and arms are held.
+#
+# Placeholders: policy.sha256 and robot.description_hash are 64 zeros, not
+# real hashes. The G1 description is still a draft, so there is no
+# description hash to record yet, and no policy file ships with the tests.
+schema_version: 1
+
+policy:
+  file: policy.onnx              # relative to this file
+  sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  format: onnx
+
+robot:
+  name: g1_29dof
+  description_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+
+rate_hz: 50.0                    # trained with a 5 ms step and decimation 4
+
+command:
+  type: velocity
+  ranges:                        # the reference config's training ranges
+    lin_vel_x: [-1.0, 1.0]       # m/s, forward
+    lin_vel_y: [-1.0, 1.0]       # m/s, left
+    ang_vel_z: [-1.0, 1.0]       # rad/s, counterclockwise
+
+# One frame, in input order: 3 + 3 + 3 + 12 + 12 + 12 + 2 = 47 values.
+observations:
+  - term: base_angular_velocity  # 3
+    scale: 0.25
+  - term: projected_gravity      # 3
+  - term: velocity_command       # 3: lin_vel_x, lin_vel_y, ang_vel_z
+    scale: [2.0, 2.0, 0.25]
+  - term: joint_position_relative  # 12: position minus default position
+    joints: legs                 # a joint group of the G1 description
+  - term: joint_velocity         # 12
+    joints: legs
+    scale: 0.05
+  - term: last_action            # 12: the policy's previous output
+  - term: gait_phase             # 2: sine and cosine of the phase
+    params: {period: 0.8}        # s
+observation_size: 47
+
+history:
+  length: 1                      # the current frame only
+  order: oldest_first
+  layout: per_term
+
+action:
+  type: position_offset
+  # Output i drives the i-th joint: target = default position + 0.25 × output.
+  joints: [left_hip_pitch, left_hip_roll, left_hip_yaw,
+           left_knee, left_ankle_pitch, left_ankle_roll,
+           right_hip_pitch, right_hip_roll, right_hip_yaw,
+           right_knee, right_ankle_pitch, right_ankle_roll]
+  scale: 0.25
+
+gains:
+  source: explicit               # the gains the policy was trained with
+  values:
+    left_hip_pitch: {kp: 100.0, kd: 2.0}
+    left_hip_roll: {kp: 100.0, kd: 2.0}
+    left_hip_yaw: {kp: 100.0, kd: 2.0}
+    left_knee: {kp: 150.0, kd: 4.0}
+    left_ankle_pitch: {kp: 40.0, kd: 2.0}
+    left_ankle_roll: {kp: 40.0, kd: 2.0}
+    right_hip_pitch: {kp: 100.0, kd: 2.0}
+    right_hip_roll: {kp: 100.0, kd: 2.0}
+    right_hip_yaw: {kp: 100.0, kd: 2.0}
+    right_knee: {kp: 150.0, kd: 4.0}
+    right_ankle_pitch: {kp: 40.0, kd: 2.0}
+    right_ankle_roll: {kp: 40.0, kd: 2.0}
+
+# Held at their default positions with the description's gains.
+held_joints: [waist_yaw, waist_roll, waist_pitch,
+              left_shoulder_pitch, left_shoulder_roll, left_shoulder_yaw,
+              left_elbow, left_wrist_roll, left_wrist_pitch, left_wrist_yaw,
+              right_shoulder_pitch, right_shoulder_roll, right_shoulder_yaw,
+              right_elbow, right_wrist_roll, right_wrist_pitch, right_wrist_yaw]
+
+provenance: external             # trained outside the platform

@@ -1,0 +1,64 @@
+name: Bug report
+description: Something in Embodiverse does not behave as its documentation says.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. A short, exact report is the
+        quickest to fix: what you ran, what you expected, and what happened.
+        If the problem could let a robot move in a way it should not, say so
+        under "Does it affect safety?".
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what happened instead. Paste error messages and tracebacks in full.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce it
+      description: >-
+        The smallest command or script that shows the problem, ideally on
+        testbot in lockstep simulation, for example
+        `uv run embodiverse run --robot testbot --adapter mujoco ...`.
+        A recording made with `--record` helps for problems during a run.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where it happened
+      options:
+        - In simulation
+        - On a real robot
+        - Elsewhere (tools, packaging, documentation)
+    validations:
+      required: true
+  - type: dropdown
+    id: safety
+    attributes:
+      label: Does it affect safety?
+      description: >-
+        For example: a command that reaches a robot without passing the
+        safety layer, a fault that is not handled, or a stop that waits for
+        the control thread.
+      options:
+        - "No"
+        - "Yes"
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: >-
+        The output of `uv run embodiverse --version; uv run python --version;
+        git rev-parse --short HEAD; uname -sm` in your checkout, and whether
+        ROS 2 is sourced in the shell.
+      render: text
+    validations:
+      required: true

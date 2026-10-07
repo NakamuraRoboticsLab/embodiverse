@@ -1,0 +1,85 @@
+name: New robot
+description: Propose adding a robot model, with what is known about it.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adding a robot starts with its description, the one source of every
+        fact about the model, then an adapter for each way it is driven
+        (docs/adding-a-robot.md). This form collects what exists for the
+        robot and under which licences, so that the work can start from
+        public sources.
+  - type: input
+    id: vendor
+    attributes:
+      label: Vendor
+      placeholder: Unitree
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: The vendor's model name, and the variant if there are several, such as the number of joints or the hands fitted.
+      placeholder: G1, 29 joints
+    validations:
+      required: true
+  - type: input
+    id: dof
+    attributes:
+      label: Degrees of freedom
+      description: The number of actuated joints that a policy can command, and which of them are optional, such as hands or a head.
+    validations:
+      required: true
+  - type: textarea
+    id: sensors
+    attributes:
+      label: Sensors
+      description: The IMU and every other sensor, with where each is mounted, as far as the sources say.
+  - type: checkboxes
+    id: exists
+    attributes:
+      label: What exists
+      description: Tick what is available, and give the links under "Public sources".
+      options:
+        - label: URDF model
+        - label: MJCF model
+        - label: Vendor SDK for low-level joint control (Python, C++ or both)
+        - label: ROS 2 interface
+        - label: Reference policy or deployment code
+  - type: textarea
+    id: interface
+    attributes:
+      label: Low-level interface
+      description: How joint commands and state are exchanged (SDK, DDS, ROS 2 topics), at which rates, with which motor modes, and in which joint order, as far as the sources say.
+  - type: textarea
+    id: sources
+    attributes:
+      label: Public sources
+      description: Every source a description or adapter would draw on, such as model repositories, SDKs, documentation and papers, each with its link and the version or commit to use.
+    validations:
+      required: true
+  - type: textarea
+    id: licences
+    attributes:
+      label: Licences
+      description: The licence of each source, and whether it allows its files, such as models and meshes, to be copied into this repository.
+    validations:
+      required: true
+  - type: dropdown
+    id: unit
+    attributes:
+      label: Is a physical unit available to check the description against?
+      description: "A description stays `status: draft` until it has been checked against the robot itself."
+      options:
+        - "Yes"
+        - "No"
+        - Not yet
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Known differences from the robots already supported, such as parallel-linkage joints, gains applied at the motor, or sensors the description schema cannot express yet.

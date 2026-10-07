@@ -1,0 +1,52 @@
+name: Feature request
+description: Something you need that Embodiverse does not do yet.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem before the solution: what you are trying to do,
+        and what stops you. Many needs can be met in your own package, as a
+        plugin, without changing Embodiverse (docs/adding-a-robot.md). For a
+        new robot, use the "New robot" form instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do, for which robot or project, and why the current contracts, runtime or tools do not let you.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you propose
+      description: How Embodiverse could meet the need. Name the modules, files or commands it would change.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other ways to meet the need, including what you do today, and why they fall short.
+  - type: dropdown
+    id: contract
+    attributes:
+      label: Does it change a contract?
+      description: >-
+        The contracts are everything in `embodiverse.contracts`: the robot
+        port, runtime data, schemas, the observation term interface and the
+        plugin groups. Everyone's code is written against them, so a change
+        there is worth talking through early (CONTRIBUTING.md, "Changing the
+        shared contracts").
+      options:
+        - "No"
+        - "Yes"
+        - Not sure
+    validations:
+      required: true
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I can work on this.

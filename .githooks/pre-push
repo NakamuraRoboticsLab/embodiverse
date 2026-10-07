@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Full checks before anything leaves this machine.
+set -euo pipefail
+
+if ! uv run nox; then
+    echo "pre-push: checks failed; nothing was pushed." >&2
+    exit 1
+fi
+
+exit 0

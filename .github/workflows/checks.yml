@@ -1,0 +1,31 @@
+# The same checks the git hooks run, on every pull request and push to main.
+# `uv run nox` is the one definition of the checks (noxfile.py); this
+# workflow only provides a clean machine to run it on.
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nox:
+    name: uv run nox
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12.9"
+          enable-cache: true
+      # nox creates one environment per session and asks uv for Python
+      # 3.10, 3.11 and 3.12, which uv downloads when the runner lacks them.
+      - run: uv run nox

@@ -1,0 +1,44 @@
+# A descriptor for a policy that drives all six of testbot's joints, for
+# the tests. policy.onnx is a zero policy: it maps the 27 observations to
+# six zero actions, so testbot holds its default pose.
+schema_version: 1
+
+policy:
+  file: policy.onnx
+  sha256: "sha256:f86928da6a2a0c014bea833abf208a2bad3598b1213f702d13b53957b3f93512"
+
+robot:
+  name: testbot
+  # content_hash of testbot's description; a test recomputes it.
+  description_hash: "sha256:a336b65eb10734d1c906313c8961046bbf4856da43ed8721fb9a366e1eefcaf0"
+
+rate_hz: 50.0            # 10 physics steps of 2 ms
+
+command:
+  type: velocity
+  ranges:
+    lin_vel_x: [-0.5, 0.5]   # m/s
+    lin_vel_y: [0.0, 0.0]    # testbot cannot step sideways
+    ang_vel_z: [0.0, 0.0]    # rad/s; nor turn
+
+# One frame: 3 + 3 + 3 + 6 + 6 + 6 = 27 values.
+observations:
+  - term: base_angular_velocity
+    scale: 0.25
+  - term: projected_gravity
+  - term: velocity_command
+  - term: joint_position_relative
+    joints: legs
+  - term: joint_velocity
+    joints: legs
+    scale: 0.05
+  - term: last_action
+observation_size: 27
+
+action:
+  type: position_offset
+  joints: legs
+  scale: 0.25
+
+gains:
+  source: description

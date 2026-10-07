@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Full checks before a merge commit is created. A fast-forward merge
+# creates no merge commit, so this hook runs on `git merge --no-ff`.
+set -euo pipefail
+
+if ! uv run nox; then
+    echo "pre-merge-commit: checks failed; the merge was not committed." >&2
+    echo "Undo it with: git merge --abort" >&2
+    exit 1
+fi
+
+exit 0

@@ -1,0 +1,22 @@
+# Python bytecode, written automatically when modules are imported
+__pycache__/
+*.py[cod]
+
+# The virtual environment uv creates; rebuilt from uv.lock with `uv sync`
+.venv/
+
+# Build output from packaging
+build/
+dist/
+*.egg-info/
+
+# Caches written by test and tooling runs
+.pytest_cache/
+.ruff_cache/
+.nox/
+
+# Run recordings
+*.mcap
+
+# Personal editor settings stay personal
+.vscode/

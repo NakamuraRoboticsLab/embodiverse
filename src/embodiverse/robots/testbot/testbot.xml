@@ -1,0 +1,91 @@
+<!--
+  testbot: a small biped for testing Embodiverse end to end, in simulation
+  only. It is not a model of any real robot.
+
+  description.yaml is the source of truth for the joint order, limits,
+  default pose and gains. The joint ranges, actuator control ranges and
+  the default keyframe below repeat its position limits, effort limits
+  and default pose, and must stay equal to them.
+
+  Axes follow REP-103: x forward, y left, z up. Every joint is a hinge
+  about y; a positive angle swings the segment below the joint backward.
+-->
+<mujoco model="testbot">
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="0.002" integrator="implicitfast"/>
+
+  <default>
+    <joint type="hinge" axis="0 1 0" armature="0.01" damping="0.1"/>
+    <geom rgba="0.75 0.75 0.78 1"/>
+    <!-- The left leg is blue, to tell the sides apart in a viewer. -->
+    <default class="left">
+      <geom rgba="0.45 0.6 0.85 1"/>
+    </default>
+  </default>
+
+  <worldbody>
+    <light name="sun" pos="0 0 3" dir="0 0 -1" directional="true"/>
+    <geom name="floor" type="plane" size="0 0 0.05" rgba="0.35 0.38 0.42 1"/>
+
+    <!-- At this height the soles touch the floor in the default pose. -->
+    <body name="pelvis" pos="0 0 0.578">
+      <freejoint name="floating_base"/>
+      <geom name="pelvis" type="box" size="0.07 0.13 0.05" mass="5"/>
+      <site name="imu_link" pos="-0.02 0 0.04"/>
+
+      <body name="left_thigh" pos="0 0.1 -0.05" childclass="left">
+        <joint name="left_hip_pitch" range="-1.5 0.5"/>
+        <geom name="left_thigh" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.035"
+              mass="1"/>
+        <body name="left_shin" pos="0 0 -0.25">
+          <joint name="left_knee" range="0 2.2"/>
+          <geom name="left_shin" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.03"
+                mass="0.8"/>
+          <body name="left_foot" pos="0 0 -0.25">
+            <joint name="left_ankle_pitch" range="-0.8 0.6"/>
+            <geom name="left_foot" type="box" pos="0.02 0 -0.035" size="0.09 0.04 0.015"
+                  mass="0.3"/>
+          </body>
+        </body>
+      </body>
+
+      <body name="right_thigh" pos="0 -0.1 -0.05">
+        <joint name="right_hip_pitch" range="-1.5 0.5"/>
+        <geom name="right_thigh" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.035"
+              mass="1"/>
+        <body name="right_shin" pos="0 0 -0.25">
+          <joint name="right_knee" range="0 2.2"/>
+          <geom name="right_shin" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.03"
+                mass="0.8"/>
+          <body name="right_foot" pos="0 0 -0.25">
+            <joint name="right_ankle_pitch" range="-0.8 0.6"/>
+            <geom name="right_foot" type="box" pos="0.02 0 -0.035" size="0.09 0.04 0.015"
+                  mass="0.3"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- One torque motor per joint, in description order. -->
+  <actuator>
+    <motor name="left_hip_pitch" joint="left_hip_pitch" gear="1" ctrlrange="-60 60"/>
+    <motor name="left_knee" joint="left_knee" gear="1" ctrlrange="-80 80"/>
+    <motor name="left_ankle_pitch" joint="left_ankle_pitch" gear="1" ctrlrange="-30 30"/>
+    <motor name="right_hip_pitch" joint="right_hip_pitch" gear="1" ctrlrange="-60 60"/>
+    <motor name="right_knee" joint="right_knee" gear="1" ctrlrange="-80 80"/>
+    <motor name="right_ankle_pitch" joint="right_ankle_pitch" gear="1" ctrlrange="-30 30"/>
+  </actuator>
+
+  <!-- The IMU, found through the site named after the description's imu.frame. -->
+  <sensor>
+    <framequat name="imu_orientation" objtype="site" objname="imu_link"/>
+    <gyro name="imu_angular_velocity" site="imu_link"/>
+    <accelerometer name="imu_linear_acceleration" site="imu_link"/>
+  </sensor>
+
+  <keyframe>
+    <!-- The description's default pose, standing on the floor. -->
+    <key name="default" qpos="0 0 0.578 1 0 0 0 -0.3 0.6 -0.3 -0.3 0.6 -0.3"/>
+  </keyframe>
+</mujoco>

@@ -1,0 +1,131 @@
+[project]
+name = "embodiverse"
+version = "0.1.0"
+description = "Shared contracts, adapters and runtime for humanoid robots."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+keywords = ["robotics", "humanoid", "locomotion", "mujoco", "onnx"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+dependencies = [
+    "numpy>=1.26",
+    "pydantic>=2.7",
+    "pyyaml>=6",
+]
+
+[project.urls]
+Repository = "https://github.com/NakamuraRoboticsLab/embodiverse"
+Documentation = "https://github.com/NakamuraRoboticsLab/embodiverse/tree/main/docs"
+Issues = "https://github.com/NakamuraRoboticsLab/embodiverse/issues"
+
+[project.scripts]
+embodiverse = "embodiverse.app.cli:main"
+
+[project.optional-dependencies]
+# Simulation: the MuJoCo adapter (embodiverse.adapters.mujoco).
+sim = ["mujoco>=3.2"]
+# Running ONNX policies (embodiverse.runtime.policy).
+runtime = ["onnxruntime>=1.20"]
+# Recording runs to MCAP files (embodiverse.runtime.recording).
+record = ["mcap>=1.5"]
+# Vendor SDKs for the hardware adapters (docs/adding-a-robot.md). Each is
+# locked here, so writing an adapter needs no change to uv.lock. The
+# PM01 has no extra: its interface is ROS 2 Humble's rclpy plus the vendor's
+# interface_protocol package, which pip cannot install.
+g1 = ["unitree-sdk2py"]
+k1 = ["booster-robotics-sdk-python>=1.6.3"]
+
+# The built-in plugins, registered as any other package registers its own
+# (docs/adding-a-robot.md). Reinstall the package after changing them.
+[project.entry-points."embodiverse.robot_descriptions"]
+g1_29dof = "embodiverse.robots.g1_29dof"
+k1_22dof = "embodiverse.robots.k1_22dof"
+pm01 = "embodiverse.robots.pm01"
+testbot = "embodiverse.robots.testbot"
+
+[project.entry-points."embodiverse.adapters"]
+loopback = "embodiverse.adapters.loopback:LoopbackRobot"
+loopback_realtime = "embodiverse.adapters.loopback:RealtimeLoopbackRobot"
+mujoco = "embodiverse.adapters.mujoco:MujocoRobot"
+mujoco_realtime = "embodiverse.adapters.mujoco:RealtimeMujocoRobot"
+
+[project.entry-points."embodiverse.observations"]
+base_angular_velocity = "embodiverse.runtime.observations:base_angular_velocity"
+gait_phase = "embodiverse.runtime.observations:gait_phase"
+joint_position_relative = "embodiverse.runtime.observations:joint_position_relative"
+joint_velocity = "embodiverse.runtime.observations:joint_velocity"
+last_action = "embodiverse.runtime.observations:last_action"
+projected_gravity = "embodiverse.runtime.observations:projected_gravity"
+velocity_command = "embodiverse.runtime.observations:velocity_command"
+
+[dependency-groups]
+dev = [
+    "mcap>=1.5",
+    "mujoco>=3.2",
+    "nox>=2026.8.17",
+    "onnx>=1.17",
+    "onnxruntime>=1.20",
+    "pyright[nodejs]>=1.1.414",
+    "pytest>=8",
+    "ruff>=0.16.9",
+    "types-pyyaml>=6.0.12.20260906",
+]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Load only plugins we ask for by name. Without this, pytest also loads every
+# plugin it finds on PYTHONPATH, e.g. the seven ROS 2 plugins a sourced
+# /opt/ros/humble adds, and crashes on their missing dependencies.
+addopts = ["--disable-plugin-autoload", "--import-mode=importlib"]
+
+[tool.ruff.lint]
+# E/W: pycodestyle errors and warnings · F: pyflakes (unused names, undefined
+# names) · I: import sorting · UP: modern syntax for our minimum Python ·
+# B: bugbear (likely bugs, e.g. mutable default arguments)
+select = ["E", "W", "F", "I", "UP", "B"]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.10"
+typeCheckingMode = "standard"
+# The contracts are the most depended-on code, so they get the strictest checks.
+strict = ["src/embodiverse/contracts"]
+# Stubs for libraries that ship none, such as mujoco's compiled bindings.
+stubPath = "typings"
+
+[tool.uv]
+# uv.lock must hold a wheel of every package for each Python on the Linux
+# machines the platform runs on: x86_64 workstations and aarch64 robot
+# computers. Without this, uv can lock a release that has no wheel for one
+# of them, and the failure shows only when that machine installs it.
+required-environments = [
+    "python_version == '3.10' and sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "python_version == '3.10' and sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "python_version == '3.11' and sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "python_version == '3.11' and sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "python_version == '3.12' and sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "python_version == '3.12' and sys_platform == 'linux' and platform_machine == 'aarch64'",
+]
+# onnxruntime 1.24 stopped publishing wheels for Python 3.10 but still
+# declares support for it, so on 3.10 the newest release that installs is 1.23.
+constraint-dependencies = ["onnxruntime<1.24; python_version < '3.11'"]
+
+[tool.uv.sources]
+# Unitree publishes the Python SDK on GitHub only; the commit is the one the
+# G1 interface notes cite (docs/adapters/unitree-g1.md, section 13).
+unitree-sdk2py = { git = "https://github.com/unitreerobotics/unitree_sdk2_python", rev = "814556d15970dd2ecf1c9984e845ca02ab07e206" }
